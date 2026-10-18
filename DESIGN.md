@@ -49,7 +49,7 @@ Four steps of emphasis, brightest first. A token's name is its rank, not its col
 | `text-secondary`   | `#b0b9c5`  | 9.6 base, 6.1 secondary, 4.7 accent | Supporting information: tool output, link URLs, diff context, syntax functions and code variables; faint borders (code block border).                                          |
 | `text-tertiary`    | `#4b5563`  | 2.5 base, 1.6 secondary             | Faintest annotations: code comments, strings and numbers, operators and punctuation, thinking block text, markdown quotes and list bullets, horizontal rules. Never body copy. |
 | `text-emphasis`    | `$primary` | 13.8 on base                        | Gold emphasis text on dark surfaces.                                                                                                                                           |
-| `text-on-emphasis` | `#101010`  | 13.8 on gold                        | Text on emphasis surfaces: agent-injected panel text and labels, search-match text.                                                                                            |
+| `text-on-emphasis` | `#101010`  | 13.8 on gold                        | Text on emphasis surfaces: search-match text.                                                                                                                                  |
 | `text-link`        | `$blue`    | 8 on base                           | Hyperlink text.                                                                                                                                                                |
 | `text-success`     | `#089c65`  | 5.4 on base                         | Success, tool titles, diff additions, code block content, bash mode border.                                                                                                    |
 | `text-danger`      | `#f1626a`  | 6.1 base, 5.7 on bg-danger          | Errors, diff removals. 5.7:1 on `bg-danger`.                                                                                                                                   |
@@ -59,17 +59,18 @@ Four steps of emphasis, brightest first. A token's name is its rank, not its col
 
 Elevation ladder above the canvas. Every level is a documented contrast step.
 
-| Token          | Hex        | vs bg-base | Usage                                                                               |
-| -------------- | ---------- | ---------- | ----------------------------------------------------------------------------------- |
-| `bg-base`      | `#101010`  | —          | The terminal canvas. Baseline for every ratio; user messages render directly on it. |
-| `bg-primary`   | `#1e2126`  | 1.2        | Standard panel surface above the canvas: editor input area, user messages.          |
-| `bg-secondary` | `#191b1f`  | 1.1        | Export cards.                                                                       |
-| `bg-tertiary`  | `#14161a`  | 1.1        | Recessed panels: tool execution boxes in pending state.                             |
-| `bg-emphasis`  | `$primary` | 13.8       | Emphasis surfaces: agent-injected message panels, search-match chips.               |
-| `bg-accent`    | `#414853`  | 2.1        | Interactive surfaces: export info panels.                                           |
-| `bg-success`   | `#02180a`  | 1.0        | Success-tinted surface: tool execution boxes in success state.                      |
-| `bg-danger`    | `#360309`  | 1.1        | Error-tinted surface: tool execution boxes in error state.                          |
-| `bg-warning`   | `#442e00`  | 1.5        | Warning-tinted surface.                                                             |
+| Token                | Hex        | vs bg-base | Usage                                                                                                 |
+| -------------------- | ---------- | ---------- | ----------------------------------------------------------------------------------------------------- |
+| `bg-base`            | `#101010`  | —          | The terminal canvas. Baseline for every ratio; user messages render directly on it.                   |
+| `bg-primary`         | `#1e2126`  | 1.2        | Standard panel surface above the canvas: editor input area, user messages.                            |
+| `bg-secondary`       | `#191b1f`  | 1.1        | Export cards.                                                                                         |
+| `bg-tertiary`        | `#14161a`  | 1.1        | Recessed panels: tool execution boxes in pending state.                                               |
+| `bg-emphasis`        | `$primary` | 13.8       | Emphasis surfaces: search-match chips.                                                                |
+| `bg-emphasis-subtle` | `#442e00`  | 1.5        | Quiet emphasis surface: agent-injected message panels (skill invocations, extension custom messages). |
+| `bg-accent`          | `#414853`  | 2.1        | Interactive surfaces: export info panels.                                                             |
+| `bg-success`         | `#02180a`  | 1.0        | Success-tinted surface: tool execution boxes in success state.                                        |
+| `bg-danger`          | `#360309`  | 1.1        | Error-tinted surface: tool execution boxes in error state.                                            |
+| `bg-warning`         | `#442e00`  | 1.5        | Warning-tinted surface.                                                                               |
 
 ## Chrome
 
