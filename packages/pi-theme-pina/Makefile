@@ -13,7 +13,7 @@ validate: ## Validate themes/*.json: schema, core consistency, vars freshness
 
 install: build ## Register this repo as a pi package (themes + extensions, loaded live)
 	pi install .
-	@echo "Registered. Unregister with 'make undev'."
+	@echo "Registered. Unregister with 'make uninstall'."
 
 uninstall: ## Remove the package registration
 	pi remove .

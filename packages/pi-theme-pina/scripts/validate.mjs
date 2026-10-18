@@ -28,7 +28,7 @@ try {
   ;({ validateThemeJson } = await import(pathToFileURL(schemaPath).href))
 } catch {
   console.error(
-    'Could not load @earendil-works/pi-coding-agent. Run `npm install` first.',
+    'Could not load @earendil-works/pi-coding-agent. Run `pnpm install` first.',
   )
   process.exit(1)
 }
@@ -42,7 +42,7 @@ const core = JSON.parse(
   await readFile(
     path.join(
       path.dirname(fileURLToPath(import.meta.url)),
-      '..',
+      '../../../',
       'tokens.json',
     ),
     'utf8',

@@ -7,7 +7,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-const core = JSON.parse(await readFile(path.join(root, 'tokens.json'), 'utf8'))
+const core = JSON.parse(await readFile(path.join(root, '../../tokens.json'), 'utf8'))
 
 const hexOf = (name, seen = new Set()) => {
   if (seen.has(name)) throw new Error(`circular reference at "${name}"`)
