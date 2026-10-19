@@ -3,11 +3,15 @@
  * segment: PinaEditor renders "(provider) model • level" inside the input panel
  * instead, so the built-in footer would show the same string twice. The rest
  * follows FooterComponent.render (pi's
- * dist/modes/interactive/components/footer.js): cwd + git branch + session
- * name and extension statuses.
+ * dist/modes/interactive/components/footer.js) for extension statuses.
  *
- * Intentional divergence: token stats are simplified to
- * "input+output (context%)" with pi's context-percentage coloring.
+ * Intentional divergence: the left side is "1% (10k) $0.42" — context
+ * percentage colored by usage, current context tokens from the same
+ * getContextUsage() source (not the cumulative session total), and cumulative
+ * session cost, hidden while zero. The right side is the location: repo-root
+ * name + git branch + cwd relative to the repo root (full paths are noise),
+ * falling back to the home-abbreviated cwd outside a repo. Too narrow, it
+ * shrinks right-to-left: dir, then branch, then repo. Session name is dropped per this layout.
  *
  * Dropped rather than faked — pi does not export these from the extension API:
  * - "(sub)": pi checks an internal OAuth subscription flag on the model
@@ -15,13 +19,18 @@
  * - " • xp": the experimental-features check is not exported.
  * - The routed virtual-model suffix, like in the editor's segment.
  */
-import { isAbsolute, relative, resolve, sep } from 'node:path'
+import { existsSync } from 'node:fs'
+import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path'
 import type {
   ExtensionContext,
   ReadonlyFooterDataProvider,
   Theme,
 } from '@earendil-works/pi-coding-agent'
 import { truncateToWidth, visibleWidth, type TUI } from '@earendil-works/pi-tui'
+import { PAD_X } from './editor.ts'
+
+/** Footer text aligns with the editor text: the bar column + editor paddingX. */
+const PAD_LEFT = 1 + PAD_X
 
 function formatTokens(count: number): string {
   if (count < 1000) return count.toString()
@@ -53,13 +62,12 @@ function sanitizeStatusText(text: string): string {
     .trim()
 }
 
-/** Cumulative input/output of the session branch, cached like FooterComponent caches its scan. */
+/** Cumulative session cost, cached like FooterComponent caches its scan. */
 type SessionStats = {
   sessionId: string
   leafId: string
   entryCount: number
-  input: number
-  output: number
+  cost: number
 }
 
 export class PinaFooter {
@@ -68,6 +76,7 @@ export class PinaFooter {
   private readonly tui: TUI
   private readonly unsub: () => void
   private stats: SessionStats | undefined
+  private gitRootCache: { cwd: string; root: string | null } | undefined
 
   constructor(
     tui: TUI,
@@ -92,25 +101,23 @@ export class PinaFooter {
     const theme = ctx.ui.theme
     const lines: string[] = []
 
-    // One line: path (cwd, git branch, session name) on the left, token stats
-    // right-aligned on the same row. The model segment lives in PinaEditor's
-    // status row.
-    let pwd = formatCwdForFooter(ctx.sessionManager.getCwd())
-    const branch = this.footerData.getGitBranch()
-    if (branch) pwd += ` (${branch})`
-    const sessionName = ctx.sessionManager.getSessionName()
-    if (sessionName) pwd += ` • ${sessionName}`
+    // One line: context stats on the left, location right-aligned on the same
+    // row, indented to the editor text column. The model segment lives in
+    // PinaEditor's status row.
+    const inner = Math.max(0, width - PAD_LEFT)
     const stats = this.statsLine(ctx, theme)
-    // Shrink the path first; the stats keep their context-percentage colors.
-    const path = truncateToWidth(
-      theme.fg('dim', pwd),
-      Math.max(0, width - visibleWidth(stats) - 1),
+    // Shrink the location first; the stats keep their context-percentage colors.
+    const location = truncateToWidth(
+      this.locationLine(ctx, theme),
+      Math.max(0, inner - visibleWidth(stats) - 1),
       theme.fg('dim', '...'),
     )
     const gap = ' '.repeat(
-      Math.max(1, width - visibleWidth(stats) - visibleWidth(path)),
+      Math.max(1, inner - visibleWidth(stats) - visibleWidth(location)),
     )
-    lines.push(truncateToWidth(path + gap + stats, width, '...'))
+    lines.push(
+      ' '.repeat(PAD_LEFT) + truncateToWidth(stats + gap + location, inner, '...'),
+    )
 
     // Extension statuses on a single line, sorted by key alphabetically.
     const statuses = this.footerData.getExtensionStatuses()
@@ -119,7 +126,10 @@ export class PinaFooter {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([, text]) => sanitizeStatusText(text))
         .join(' ')
-      lines.push(truncateToWidth(statusLine, width, theme.fg('dim', '...')))
+      lines.push(
+        ' '.repeat(PAD_LEFT) +
+          truncateToWidth(statusLine, Math.max(0, width - PAD_LEFT), theme.fg('dim', '...')),
+      )
     }
     // Trailing blank line as bottom padding.
     lines.push('')
@@ -127,27 +137,68 @@ export class PinaFooter {
   }
 
   private statsLine(ctx: ExtensionContext, theme: Theme): string {
-    const stats = this.sessionStats(ctx)
     const parts: string[] = []
-    const total = stats.input + stats.output
-    if (total) parts.push(formatTokens(total))
 
-    // Context percentage, colored by usage like the built-in footer.
+    // Context percentage in text-primary, escalating to warning/error at high
+    // usage like the built-in footer.
     const percent = ctx.getContextUsage()?.percent
     if (percent !== null && percent !== undefined) {
-      const display = `(${Math.round(percent)}%)`
+      const display = `${Math.round(percent)}%`
       parts.push(
         percent > 90
           ? theme.fg('error', display)
           : percent > 70
             ? theme.fg('warning', display)
-            : display,
+            : theme.fg('text', display),
       )
     }
 
-    // The context segment embeds its own color and reset, which would end a
-    // whole-line dim wrap; nothing uncolored follows it, so one dim wrap matches.
-    return theme.fg('dim', parts.join(' '))
+    // Current context tokens — same source as the percentage, so the pair stays
+    // coherent (and resets after compaction) unlike a cumulative total.
+    const contextTokens = ctx.getContextUsage()?.tokens
+    if (contextTokens) {
+      parts.push(theme.fg('dim', `(${formatTokens(contextTokens)})`))
+    }
+
+    const cost = this.sessionStats(ctx).cost
+    if (cost) parts.push(theme.fg('dim', `$${cost.toFixed(2)}`))
+
+    // Each part embeds its own color and reset, so no whole-line wrap.
+    return parts.join(' ')
+  }
+
+  /** Repo-root name, branch, and cwd relative to the root. */
+  private locationLine(ctx: ExtensionContext, theme: Theme): string {
+    const cwd = ctx.sessionManager.getCwd()
+    const root = this.gitRoot(cwd)
+    if (!root) return theme.fg('dim', formatCwdForFooter(cwd))
+
+    const branch = this.footerData.getGitBranch()
+    const relCwd = relative(resolve(root), resolve(cwd))
+    // The ⎇ glyph doubles as the separator between repo and branch.
+    let out = theme.fg('text', basename(root))
+    if (branch) out += ` ${theme.fg('accent', `⎇ ${branch}`)}`
+    if (relCwd && relCwd !== '.') out += ` ${theme.fg('dim', `· ${relCwd}`)}`
+    return out
+  }
+
+  /** Nearest ancestor directory containing `.git`. Cached per cwd. */
+  private gitRoot(cwd: string): string | null {
+    const cached = this.gitRootCache
+    if (cached?.cwd === cwd) return cached.root
+    let root: string | null = null
+    let dir = resolve(cwd)
+    for (;;) {
+      if (existsSync(`${dir}${sep}.git`)) {
+        root = dir
+        break
+      }
+      const parent = dirname(dir)
+      if (parent === dir) break
+      dir = parent
+    }
+    this.gitRootCache = { cwd, root }
+    return root
   }
 
   private sessionStats(ctx: ExtensionContext): SessionStats {
@@ -168,8 +219,7 @@ export class PinaFooter {
       sessionId,
       leafId,
       entryCount: entries.length,
-      input: 0,
-      output: 0,
+      cost: 0,
     }
     for (const entry of entries) {
       if (entry.type === 'usage') {
@@ -199,8 +249,7 @@ export class PinaFooter {
 
 function addUsage(
   stats: SessionStats,
-  usage: { input: number; output: number },
+  usage: { cost: { total: number } },
 ): void {
-  stats.input += usage.input
-  stats.output += usage.output
+  stats.cost += usage.cost.total
 }

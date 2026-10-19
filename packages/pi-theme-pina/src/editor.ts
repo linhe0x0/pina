@@ -177,4 +177,4 @@ class PinaEditor extends CustomEditor {
   }
 }
 
-export { PinaEditor }
+export { PAD_X, PinaEditor }
