@@ -10,12 +10,14 @@ import type {
 } from '@earendil-works/pi-coding-agent'
 import { PinaEditor } from '../src/editor.ts'
 import { PinaFooter } from '../src/footer.ts'
+import { installDeferredCellSizeQuery } from '../src/ghostty-cell-size-query.ts'
 import { thinkingQuote } from '../src/thinking-quote.ts'
 import { installUserMessageBorder } from '../src/user-message-border.ts'
 
 export default function (pi: ExtensionAPI) {
   let ctx: ExtensionContext | undefined
   installUserMessageBorder(() => ctx)
+  installDeferredCellSizeQuery()
   pi.registerMarkdownTransformer(thinkingQuote)
   pi.on('session_start', (_event, context) => {
     ctx = context
