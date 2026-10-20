@@ -5,13 +5,14 @@
  * follows FooterComponent.render (pi's
  * dist/modes/interactive/components/footer.js) for extension statuses.
  *
- * Intentional divergence: the left side is "1% (10k) $0.42" — context
- * percentage colored by usage, current context tokens from the same
- * getContextUsage() source (not the cumulative session total), and cumulative
- * session cost, hidden while zero. The right side is the location: repo-root
- * name + git branch + cwd relative to the repo root (full paths are noise),
- * falling back to the home-abbreviated cwd outside a repo. Too narrow, it
- * shrinks right-to-left: dir, then branch, then repo. Session name is dropped per this layout.
+ * Intentional divergence: the left side is the location: repo-root name + git
+ * branch + cwd relative to the repo root (full paths are noise), falling back
+ * to the home-abbreviated cwd outside a repo. The right side is "1% (10k)
+ * $0.42" — context percentage colored by usage, current context tokens from
+ * the same getContextUsage() source (not the cumulative session total), and
+ * cumulative session cost, hidden while zero. Too narrow, it shrinks the
+ * location right-to-left: dir, then branch, then repo. Session name is dropped
+ * per this layout.
  *
  * Dropped rather than faked — pi does not export these from the extension API:
  * - "(sub)": pi checks an internal OAuth subscription flag on the model
@@ -101,7 +102,7 @@ export class PinaFooter {
     const theme = ctx.ui.theme
     const lines: string[] = []
 
-    // One line: context stats on the left, location right-aligned on the same
+    // One line: location on the left, context stats right-aligned on the same
     // row, indented to the editor text column. The model segment lives in
     // PinaEditor's status row.
     const inner = Math.max(0, width - PAD_LEFT)
@@ -116,7 +117,7 @@ export class PinaFooter {
       Math.max(1, inner - visibleWidth(stats) - visibleWidth(location)),
     )
     lines.push(
-      ' '.repeat(PAD_LEFT) + truncateToWidth(stats + gap + location, inner, '...'),
+      ' '.repeat(PAD_LEFT) + truncateToWidth(location + gap + stats, inner, '...'),
     )
 
     // Extension statuses on a single line, sorted by key alphabetically.
