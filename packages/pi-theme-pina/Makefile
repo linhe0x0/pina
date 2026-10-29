@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help build validate install uninstall typecheck check format
+.PHONY: help build validate install uninstall typecheck test check format
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -21,7 +21,10 @@ uninstall: ## Remove the package registration
 typecheck: ## Typecheck extension sources
 	npx tsc --noEmit
 
+test: ## Run extension regression tests
+	node --test tests/
+
 format: ## Format all files with Prettier
 	npx prettier --write .
 
-check: validate typecheck ## Run all checks
+check: validate typecheck test ## Run all checks

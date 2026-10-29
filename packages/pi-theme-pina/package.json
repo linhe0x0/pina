@@ -28,6 +28,7 @@
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "typecheck": "tsc --noEmit",
+    "test": "node --test tests/",
     "format": "prettier --write ."
   },
   "devDependencies": {

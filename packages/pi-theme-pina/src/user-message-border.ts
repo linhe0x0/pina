@@ -31,6 +31,18 @@ import { truncateToWidth } from '@earendil-works/pi-tui'
 
 const BAR = '▌'
 
+// Upstream prefixes the first/last rendered lines with OSC 133 semantic prompt
+// markers (ESC]133;A / B / C). Ghostty parses these: 133;A means an implicit
+// fresh-line (CR+LF) whenever the cursor is not at column 0. The bar must
+// therefore never precede the markers — writing it first pushes the marker off
+// column 0, Ghostty moves the rest of the row (the userMessageBg band) one line
+// down, and the next row write erases it: the block's first row renders
+// bar-only, without background. Keeping the markers at line start also lets
+// pi-tui's layout strip them again (it only strips a leading zone prefix), and
+// should they ever reach a terminal unstripped, a marker at column 0 is a
+// no-op fresh-line everywhere that honors it.
+const OSC133_ZONE_PREFIX = /^(?:\x1b\]133;[ABC](?:\x07|\x1b\\))+/
+
 interface PatchablePrototype {
   render: (width: number) => string[]
   pinaPristineRender?: (width: number) => string[]
@@ -62,10 +74,11 @@ export function installUserMessageBorder(
     if (!theme || lines.length === 0) return lines
     const bg = theme.getBgAnsi('userMessageBg')
     const bar = theme.fg('accent', BAR)
-    return lines.map((line) =>
-      bg && !line.includes(bg)
-        ? line
-        : bar + truncateToWidth(line, width - 1, ''),
-    )
+    return lines.map((line) => {
+      if (!bg || !line.includes(bg)) return line
+      const zones = line.match(OSC133_ZONE_PREFIX)?.[0] ?? ''
+      const body = zones ? line.slice(zones.length) : line
+      return zones + bar + truncateToWidth(body, width - 1, '')
+    })
   }
 }
