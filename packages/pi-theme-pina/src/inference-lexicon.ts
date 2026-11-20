@@ -1,15 +1,3 @@
-/**
- * Gate lists for reply-emphasis machine-token inference. The lists live here,
- * apart from the matcher, so the vocabulary of accepted artifacts can be read
- * and extended in one place; reply-emphasis compiles them into its single
- * combined regex through the *_SOURCE consts below.
- *
- * Deliberately not listed: dev, io, com, app, local, test — domain and
- * collision lookalikes (`pi.dev`, `x.test`) must stay prose. Makefile has no
- * extension and stays unmatched — accepted limitation.
- */
-
-/** File extensions that make `[path/]name.EXT[:line[:col]]` a machine reference. */
 export const FILE_EXTENSIONS: readonly string[] = [
   'js',
   'ts',
@@ -88,7 +76,6 @@ export const FILE_EXTENSIONS: readonly string[] = [
   'readme',
 ]
 
-/** Leading-dot files matched by name, with no extension required. */
 export const DOTFILE_NAMES: readonly string[] = [
   'env',
   'gitignore',
@@ -103,11 +90,6 @@ export const DOTFILE_NAMES: readonly string[] = [
   'profile',
 ]
 
-/**
- * Exact lowercase `prefix/name` branch prefixes (conventional-commit style).
- * Deliberately not listed: test, build, style — plain English words whose
- * `prefix/name` shape reads more like a path or prose than a branch.
- */
 export const BRANCH_PREFIXES: readonly string[] = [
   'feat',
   'feature',
@@ -123,19 +105,11 @@ export const BRANCH_PREFIXES: readonly string[] = [
   'ci',
 ]
 
-/** Uppercase-only task markers; lowercase todo/hack stay ordinary words. */
 export const MARKER_WORDS: readonly string[] = ['TODO', 'FIXME', 'HACK']
 
-/** Longer words first, so `jsx` is tried before a `js` prefix of it. */
 const longestFirst = (words: readonly string[]): string[] =>
   [...words].sort((a, b) => b.length - a.length)
 
-/**
- * Per-character case-insensitive expansion (`ts` -> `[tT][sS]`; digits stay
- * literal). The combined matcher never carries the `i` flag — TODO/FIXME/HACK
- * and the hex classes depend on case — so list-driven case tolerance is baked
- * into the alternation itself.
- */
 function caseInsensitiveSource(words: readonly string[]): string {
   return longestFirst(words)
     .map((word) =>

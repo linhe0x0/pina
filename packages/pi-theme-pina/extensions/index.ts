@@ -1,13 +1,3 @@
-/**
- * Piña extension entry. Registers every TUI customization in one place so the
- * package can be enabled or disabled as a unit: input editor, status (footer
- * minus the model segment, which the editor pins inside its panel), extension
- * widgets (pi-subagents' async-agent status) as a spaced panel, and message
- * rendering as it lands: thinking blocks as quotes, assistant Markdown with
- * reply emphasis (src/reply-emphasis.ts). Pi allows one Markdown transformer
- * per extension, so the entry owns the single registration and dispatches by
- * message type. Each concern lives in its own src/ module.
- */
 import type {
   ExtensionAPI,
   ExtensionContext,

@@ -1,10 +1,3 @@
-/**
- * Smoke run for reply-emphasis: decorate() a mixed sample line against a stub
- * of the real pina-dark theme (themes/pina-dark.json vars resolved to
- * truecolor ANSI), proving inferred chips and pill edges render with balanced
- * escape sequences and no adjacent escapes ("\x1b\x1b"). Exits non-zero on any
- * failed check. Run: node scripts/smoke-reply-emphasis.mjs
- */
 import { readFileSync } from 'node:fs'
 import { createPalette, decorate } from '../src/reply-emphasis.ts'
 
@@ -18,7 +11,6 @@ const hexOf = (token) => {
   return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
 }
 const sgr = (code, token) => `\x1b[${code};2;${hexOf(token).join(';')}m`
-// The slice of the Theme interface createPalette uses, backed by pina-dark.
 const theme = {
   fg: (token, text) => sgr(38, token) + text + '\x1b[39m',
   getFgAnsi: (token) => sgr(38, token),
@@ -34,7 +26,6 @@ const line = [
 
 const out = decorate(line, createPalette(theme))
 
-// Terminal-shaped escape stripping: numeric SGR runs and token-named runs.
 const strip = (text) =>
   text.replace(/\x1b\[(?:[34][89];[A-Za-z]+|[0-9;]+)m/g, '')
 const plainText = strip(out)

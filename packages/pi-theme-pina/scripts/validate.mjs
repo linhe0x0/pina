@@ -1,12 +1,3 @@
-// Validates themes/*.json against pi's published theme schema and against the design core
-// (tokens.json):
-// 1. schema conformance, and the theme name matches the filename
-// 2. `vars` matches the core exactly — when out of date, run `make build`
-// 3. every var value resolves to a core hex
-// 4. `colors` / `export` reference vars only, never raw hex
-// 5. src/design-tokens.gen.ts matches the core — when out of date, run `make build`
-// The schema validator comes from @earendil-works/pi-coding-agent (devDependency). Its exports
-// map does not expose the schema module, so import the installed file directly from node_modules.
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -47,7 +38,6 @@ const core = JSON.parse(
   ),
 )
 
-// Token values are hexes; $name references another token and resolves to its hex.
 const hexOf = (name, seen = new Set()) => {
   if (seen.has(name)) throw new Error(`circular reference at "${name}"`)
   seen.add(name)
@@ -66,13 +56,11 @@ const camel = (kebab) =>
     .map((part, i) => (i ? part[0].toUpperCase() + part.slice(1) : part))
     .join('')
 
-// What `make build` would produce for vars, and the var names colors may reference.
 const expectedVars = Object.fromEntries(
   Object.keys(core.tokens).map((name) => [camel(name), hexOf(name)]),
 )
 const knownVars = new Set(Object.keys(expectedVars))
 
-// The generated module must mirror the core byte for byte, like theme vars.
 const generatedPath = path.join(root, 'src', 'design-tokens.gen.ts')
 try {
   const source = await readFile(generatedPath, 'utf8')
@@ -105,19 +93,16 @@ for (const file of files) {
   const json = JSON.parse(await readFile(path.join(themesDir, file), 'utf8'))
   try {
     validateThemeJson(file, json)
-    // Pi resolves the user theme by <name>.json, so the filename must match the theme name.
     if (json.name !== path.basename(file, '.json')) {
       throw new Error(
         `theme name "${json.name}" must match filename (expected "${json.name}.json")`,
       )
     }
-    // Vars are generated, never hand-edited: they must equal the core mirror byte for byte.
     if (JSON.stringify(json.vars ?? {}) !== JSON.stringify(expectedVars)) {
       throw new Error(
         `vars are out of date with tokens.json (run \`make build\`)`,
       )
     }
-    // Colors and export may only reference vars — never raw hex, never unknown names.
     for (const [key, value] of [
       ...Object.entries(json.colors ?? {}),
       ...Object.entries(json.export ?? {}),

@@ -1,33 +1,3 @@
-/**
- * Reply-emphasis regression tests.
- *
- * The transformer adapted from pi-emphasis must:
- * - map pill words to tones regardless of case and spacing, accept detail
- *   ("Passed 12/12"), and refuse longer words that merely start like a
- *   known one ("Donezo"),
- * - draw pills with the word's icon, display synonyms as one canonical
- *   word, honor a label's own leading glyph, and leave labels over 32
- *   characters as typed,
- * - give headings and a line's leading bold label an icon from their word,
- *   after list markers and tree connectors, but never bold later in a line,
- * - give bold action lead-ins ("**Check:**") exactly one icon when they end
- *   in a colon, anywhere in a line,
- * - color bold spans (a Pi fg token or a raw hex; invalid hex falls back to
- *   mdLink), marks (✓ ✗ →), and tree connectors, ending an
- *   unclosed span's color at the line end (streaming safety),
- * - leave fenced code, inline code, and escaped markers untouched,
- * - infer machine tokens (commits, file references, timestamps, flags, ...) as
- *   neutral pills in one pass over raw prose, gated by the lists in
- *   src/inference-lexicon.ts and off with PINA_ARTIFACTS=0,
- * - fall back to reverse video when the theme reports no panel background,
- * - and, as a transformer, decorate only assistant messages, survive a
- *   stale ctx with the last good theme, and rebuild the palette on a theme
- *   switch.
- *
- * The stub theme colors text with readable tags, so assertions can name the
- * color they expect. Glyph expectations are built through fromCodePoint so
- * the source carries no literal Private Use Area characters.
- */
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import type {
@@ -60,16 +30,10 @@ const NBSP = gl(0xa0)
 
 const plain = (text: string, p: Palette = palette) =>
   decorate(text, p)
-    // Strip the two escape shapes the palette emits: numeric SGR runs and
-    // token-named fg/bg runs. A greedy class over both would bite into
-    // alphanumeric pill text ("\x1b[1m1h30m30s\x1b[22;27m" -> "30s"); the
-    // named branch is safe because a named run is always followed by another
-    // escape or a cap glyph, never by pill text.
     .replace(/\x1b\[(?:[34][89];[A-Za-z]+|[0-9;]+)m/g, '')
     .replace(new RegExp(`[${CAPS.join('')}]`, 'g'), '|')
     .replace(new RegExp(NBSP, 'g'), ' ')
 
-/** Whole pills in a plain() rendering: half the cap count. */
 const chips = (out: string) => (out.match(/\|/g) ?? []).length / 2
 
 const contextOf = (messageType: string) =>
@@ -387,10 +351,8 @@ test('splitCodeSpans pairs equal-length backtick runs', () => {
     '`` `git abc1234` ``',
     ' y',
   ])
-  // A length-mismatched or unclosed run never pairs; it stays literal prose.
   assert.deepEqual(splitCodeSpans('`abc1234``'), ['`abc1234``'])
   assert.deepEqual(splitCodeSpans('``abc`'), ['``abc`'])
-  // An opener without an equal closer is skipped; a later run opens instead.
   assert.deepEqual(splitCodeSpans('`foo``bar``'), ['`foo', '``bar``', ''])
 })
 
@@ -437,7 +399,6 @@ test('file and branch tokens chip inside code spans with their icons', () => {
 test('a double-wrapped code span passes through untouched', () => {
   const line = 'fixed in `` `abc1234` `` and `` `npm install` ``'
   assert.equal(plain(line), line)
-  // Neighboring bare tokens on the same line still infer.
   assert.equal(
     plain('`` `git abc1234` `` then abc1234 bare'),
     '`` `git abc1234` `` then |' + gl(0xf417) + ' abc1234| bare',
@@ -445,11 +406,7 @@ test('a double-wrapped code span passes through untouched', () => {
 })
 
 test('mismatched backtick runs render whole and stay literal', () => {
-  // 1-run opener closed by the trailing 1-run; the 2-run in between is
-  // content, so the whole thing is one protected span.
   assert.equal(plain('run `deadbee1``x` now'), 'run `deadbee1``x` now')
-  // No equal-length closer exists here, so CommonMark leaves it all prose:
-  // the stray runs stay literal and the hash chips like any bare prose hash.
   assert.equal(
     plain('`abc1234`` stays'),
     '`|' + gl(0xf417) + ' abc1234|`` stays',
@@ -473,9 +430,6 @@ test('env assignments need at least two key characters', () => {
 })
 
 test('a hash after a command word chips bare; inside code the command stays literal', () => {
-  // The finalized rules carry no command-word exemption, so a bare
-  // `git abc1234` chips its hash exactly like `commit abc1234` does; the
-  // code-span form stays literal because its content is not one whole token.
   assert.equal(
     plain('run git abc1234 now'),
     `run git |${gl(0xf417)} abc1234| now`,
@@ -510,7 +464,6 @@ test('PINA_ARTIFACTS=0 turns the inference layer off', () => {
   try {
     const line = 'commit abc1234 at 14:02 on feat/x with --dry-run'
     assert.equal(plain(line), line)
-    // The gate covers the code-span carve-out too, not only bare inference.
     assert.equal(plain('`b5a0d9f` stays'), '`b5a0d9f` stays')
   } finally {
     delete process.env.PINA_ARTIFACTS

@@ -1,21 +1,3 @@
-/**
- * Widget panel regression tests.
- *
- * Extension widgets (pi-subagents' async-agent status) previously rendered as
- * bare lines on the canvas, flush against the input editor's panel. The panel
- * treatment must:
- * - paint bgTertiary across the full width of every rendered line,
- * - open every row with the fixed rgb(165,118,199) left bar (▌), like the
- *   input editor's bar, with the widget content one column to its right,
- * - re-apply the surface after every embedded full ANSI reset, so mid-line
- *   restyles cannot punch transparent holes into the panel,
- * - frame the content with half-height edge rows (▖/▘ bar glyphs + ▄/▀
- *   surface fills, outer halves canvas) replacing the full padding rows, so
- *   padding and the gap to the editor panel each read as half a line,
- * - pass string-array and undefined widget content through untouched, and
- * - keep the inner component's mouse, invalidate, and dispose behavior intact
- *   (the pi-subagents widget collapses on clicks to its first row).
- */
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { ExtensionContext, Theme } from '@earendil-works/pi-coding-agent'
@@ -43,11 +25,6 @@ type Mounted = {
   options?: { placement?: string }
 }
 
-/**
- * A uiContext whose setWidget records what it was given, like pi's. With a
- * null theme, ctx.ui access throws — the stale window after session
- * replacement.
- */
 function fakeContext(theme: Theme | null): {
   ctx: ExtensionContext
   mounted: Mounted[]
@@ -67,7 +44,6 @@ function fakeContext(theme: Theme | null): {
   return { ctx, mounted }
 }
 
-/** A stand-in for a pi-subagents widget component. */
 function fakeInner(
   lines: string[],
   handlers: {
@@ -84,10 +60,6 @@ function fakeInner(
   }
 }
 
-/**
- * Install the panel, set `inner` through the wrapped setWidget, and return the
- * component the wrapper handed to pi for mounting.
- */
 type Panel = {
   render(width: number): string[]
   invalidate(): void
@@ -118,7 +90,7 @@ test('paints the panel surface across the full width of every line', () => {
     ]),
   )
   const lines = panel.render(WIDTH)
-  assert.equal(lines.length, 4) // top edge + two content rows + bottom edge
+  assert.equal(lines.length, 4)
   for (const line of lines.slice(1, 3)) {
     assert.ok(line.startsWith(BAR), 'line must start with the left bar')
     assert.ok(line.includes(BG), 'line must carry the surface color')
@@ -147,8 +119,6 @@ test('re-applies the surface after every embedded full reset', () => {
     fakeInner(['\x1b[1mhead\x1b[0mtail \x1b[0mend']),
   )
   const painted = panel.render(WIDTH)[1]
-  // Both embedded resets are followed by a fresh surface color before the
-  // remaining text, so no transparent hole opens mid-line.
   assert.ok(painted.includes(`\x1b[0m${BG}tail`))
   assert.ok(painted.includes(`\x1b[0m${BG}end`))
 })
@@ -161,7 +131,7 @@ test('frames the content with half-height edge rows', () => {
     fakeInner(['\x1b[38;5;71mrow\x1b[39m']),
   )
   const lines = panel.render(WIDTH)
-  assert.equal(lines.length, 3) // top edge + content + bottom edge
+  assert.equal(lines.length, 3)
   assert.equal(lines[0], TOP_EDGE, 'top edge paints the lower half of its cell')
   assert.equal(
     lines[2],
@@ -219,7 +189,7 @@ test('clicks translate past the bar and edge rows; bar and edge row clicks are i
       },
     }),
   )
-  panel.render(WIDTH) // three rows: edge + content + edge
+  panel.render(WIDTH)
   panel.handleMouse({ type: 'click', button: 'left', y: 0, x: 3 } as never)
   assert.deepEqual(clicks, [], 'click on the top edge row is ignored')
   panel.handleMouse({ type: 'click', button: 'left', y: 1, x: 0 } as never)
@@ -255,8 +225,6 @@ test('a stale ctx keeps the last good theme', () => {
   const panel = factory() as Panel
   assert.ok(panel.render(WIDTH)[0].includes(SURFACE_FG))
 
-  // Session rebound: the panel's ctx closure now points at a context whose
-  // ui access rejects. The last good theme keeps the panel painted.
   current = fakeContext(null).ctx
   assert.ok(
     panel.render(WIDTH)[0].includes(SURFACE_FG),

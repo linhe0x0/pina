@@ -1,16 +1,3 @@
-/**
- * Regression test for the Ghostty OSC 133 fresh-line bug.
- *
- * Upstream UserMessageComponent.render prepends ESC]133;A (semantic prompt
- * start) to the first rendered line. Ghostty treats 133;A as an implicit
- * fresh-line (CR+LF) whenever the cursor is not at column 0, so any bytes the
- * border extension writes AHEAD of the marker (the ▌ bar) displace the rest of
- * the row — the userMessageBg band — one line down, where the next row write
- * erases it. The block's first row then renders bar-only, without background.
- *
- * Invariant: every OSC 133 zone marker must stay at the start of its line,
- * ahead of the accent bar.
- */
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { UserMessageComponent } from '@earendil-works/pi-coding-agent'
@@ -33,8 +20,6 @@ const fakeChild = {
 }
 
 function renderWithBorder(): string[] {
-  // Bare prototype instance: Container.render only touches `children`, so a
-  // stub child exercises the exact render chain without the theme system.
   const component = Object.create(
     UserMessageComponent.prototype,
   ) as UserMessageComponent
