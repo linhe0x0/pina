@@ -268,7 +268,7 @@ test('six-digit hex colors chip; odd lengths stay untouched', () => {
 
 test('bare file names chip whole, with line and column suffixes', () => {
   const out = plain(
-    'a.js README.md src/auth.ts .env README README.MD a.js:12 src/auth.ts:42:21',
+    'a.js README.md src/auth.ts .env README README.MD a.js:12 src/auth.ts:42:21 init.nvim',
   )
   for (const token of [
     'a.js',
@@ -279,10 +279,11 @@ test('bare file names chip whole, with line and column suffixes', () => {
     'README.MD',
     'a.js:12',
     'src/auth.ts:42:21',
+    'init.nvim',
   ]) {
     assert.ok(out.includes(`|${gl(0xf15b)} ${token}|`), token)
   }
-  assert.equal(chips(out), 8)
+  assert.equal(chips(out), 9)
 })
 
 test('non-whitelisted lookalikes stay untouched', () => {

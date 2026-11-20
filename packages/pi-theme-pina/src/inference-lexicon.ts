@@ -53,6 +53,7 @@ export const FILE_EXTENSIONS: readonly string[] = [
   'svelte',
   'astro',
   'lua',
+  'nvim',
   'ex',
   'exs',
   'erl',
