@@ -4,6 +4,9 @@ A platform-agnostic color system for AI coding agent TUIs. Three artifacts, one 
 
 - **`DESIGN.md`** (this file) — the spec: principles, tokens, usage.
 - **`tokens.json`** — the machine-readable source of every hex value.
+- **derived consumers** — `themes/*.json` vars and `packages/pi-theme-pina/src/design-tokens.gen.ts`
+  are both generated from tokens.json by `make build`; neither is hand-edited. Tokens without a Pi
+  theme token slot are consumed by extensions from the generated module as direct truecolor.
 
 ## Principles
 
@@ -49,6 +52,7 @@ Four steps of emphasis, brightest first. A token's name is its rank, not its col
 | `text-secondary`   | `#b0b9c5`  | 9.6 base, 6.1 secondary, 4.7 accent | Supporting information: tool output, link URLs, diff context, syntax functions and code variables; faint borders (code block border).                                          |
 | `text-tertiary`    | `#4b5563`  | 2.5 base, 1.6 secondary             | Faintest annotations: code comments, strings and numbers, operators and punctuation, thinking block text, markdown quotes and list bullets, horizontal rules. Never body copy. |
 | `text-emphasis`    | `$primary` | 13.8 on base                        | Gold emphasis text on dark surfaces.                                                                                                                                           |
+| `text-anchor`      | `#b8a1ff`  | 8.7 on base                         | Bold anchor terms in assistant replies; no Pi token slot, consumed as direct truecolor.                                                                                        |
 | `text-on-emphasis` | `#101010`  | 13.8 on gold                        | Text on emphasis surfaces: search-match text.                                                                                                                                  |
 | `text-link`        | `$blue`    | 8 on base                           | Hyperlink text.                                                                                                                                                                |
 | `text-success`     | `#089c65`  | 5.4 on base                         | Success, tool titles, diff additions, code block content, bash mode border.                                                                                                    |
@@ -79,6 +83,7 @@ Elevation ladder above the canvas. Every level is a documented contrast step.
 | `border-base`      | `#3f4550`         | 2          | Normal borders.                     |
 | `border-secondary` | `#30363e`         | 1.6        | Subtle separators; scrollbar track. |
 | `border-accent`    | `$primary-accent` | 4.3        | Focused borders, meta badges.       |
+| `border-widget`    | `#a576c7`         | 5.4        | Extension widget panel accent bar.  |
 
 ## Cognition ramp
 

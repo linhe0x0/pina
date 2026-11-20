@@ -14,7 +14,7 @@
  * ladder — the editor's panel stays one rung above on bg-primary) across the
  * full width, re-applied after every embedded ANSI reset (the editor panel
  * uses the same technique), so the block reads as a single recessed card. A left
- * accent bar (▌ in a fixed rgb(165,118,199)) mirrors the input editor's left
+ * accent bar (▌ in the border-widget design token) mirrors the input editor's left
  * bar; the widget renders one column to its right, inside the surface. pi
  * already puts a canvas-colored spacer above the panel, and the editor panel
  * below opens with its own blank surface row that would merge with the card's
@@ -47,6 +47,7 @@ import {
   type TUI,
   type TuiMouseEvent,
 } from '@earendil-works/pi-tui'
+import { DESIGN_TOKENS } from './design-tokens.gen.ts'
 
 type WidgetComponent = Component & { dispose?(): void }
 type WidgetFactory = (tui: TUI, theme: Theme) => WidgetComponent
@@ -68,8 +69,12 @@ const BAR_CAP = '▘'
 const HALF_BLOCK_LOWER = '▄'
 /** Upper-half block: paints only the top half of its cell. */
 const HALF_BLOCK = '▀'
-/** Fixed left-bar color: rgb(165,118,199), independent of the theme. */
-const BAR_FG = '\x1b[38;2;165;118;199m'
+/** Fixed left-bar color: the border-widget design token, as truecolor. */
+const truecolorFg = (hex: string) =>
+  `\x1b[38;2;${[1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16))
+    .join(';')}m`
+const BAR_FG = truecolorFg(DESIGN_TOKENS.borderWidget)
 const RESET_FG = '\x1b[39m'
 const FULL_RESET = '\x1b[0m'
 

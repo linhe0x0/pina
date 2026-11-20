@@ -4,6 +4,7 @@
 // 2. `vars` matches the core exactly — when out of date, run `make build`
 // 3. every var value resolves to a core hex
 // 4. `colors` / `export` reference vars only, never raw hex
+// 5. src/design-tokens.gen.ts matches the core — when out of date, run `make build`
 // The schema validator comes from @earendil-works/pi-coding-agent (devDependency). Its exports
 // map does not expose the schema module, so import the installed file directly from node_modules.
 import { readdir, readFile } from 'node:fs/promises'
@@ -33,11 +34,8 @@ try {
   process.exit(1)
 }
 
-const themesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
-  'themes',
-)
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+const themesDir = path.join(root, 'themes')
 const core = JSON.parse(
   await readFile(
     path.join(
@@ -73,6 +71,28 @@ const expectedVars = Object.fromEntries(
   Object.keys(core.tokens).map((name) => [camel(name), hexOf(name)]),
 )
 const knownVars = new Set(Object.keys(expectedVars))
+
+// The generated module must mirror the core byte for byte, like theme vars.
+const generatedPath = path.join(root, 'src', 'design-tokens.gen.ts')
+try {
+  const source = await readFile(generatedPath, 'utf8')
+  const entries = [...source.matchAll(/^  (\w+): '(#[0-9a-fA-F]{6})',$/gm)].map(
+    ([, name, hex]) => [name, hex],
+  )
+  const generatedVars = Object.fromEntries(entries)
+  if (
+    source.trim().length === 0 ||
+    JSON.stringify(generatedVars) !== JSON.stringify(expectedVars)
+  ) {
+    throw new Error(
+      'src/design-tokens.gen.ts is out of date with tokens.json (run `make build`)',
+    )
+  }
+  console.log('OK   src/design-tokens.gen.ts')
+} catch (error) {
+  failed = true
+  console.error(`FAIL src/design-tokens.gen.ts\n${error.message}`)
+}
 
 const files = (await readdir(themesDir)).filter((f) => f.endsWith('.json'))
 if (files.length === 0) {
