@@ -84,21 +84,21 @@ test('non-whitelisted lookalikes stay untouched', () => {
   assert.equal(plain(line), line)
 })
 
-test('markers, flags, env assignments and branches chip', () => {
+test('markers, env assignments and branches chip', () => {
   const out = plain(
     '87% done, TODO: fix --dry-run, set NODE_ENV=prod on feat/x',
   )
   assert.ok(out.includes('|87%|'))
   assert.ok(out.includes(`|${gl(0xf0ae)} TODO|`))
-  assert.ok(out.includes('|--dry-run|'))
   assert.ok(out.includes('|NODE_ENV=prod|'))
   assert.ok(out.includes(`|${gl(0xf126)} feat/x|`))
-  assert.equal(chips(out), 5)
+  assert.equal(chips(out), 4)
+  assert.ok(out.includes('--dry-run'))
 })
 
-test('lowercase env keys, short flags, triple dashes and marker lookalikes stay untouched', () => {
+test('lowercase env keys, short and long flags, triple dashes and marker lookalikes stay untouched', () => {
   const line =
-    'node_env=prod stays, -x and ---weird too, TODOS and fixup remain'
+    'node_env=prod stays, -x --dry-run ---weird too, TODOS and fixup remain'
   assert.equal(plain(line), line)
 })
 
@@ -142,12 +142,11 @@ test('pill brackets stay protected, but a code span that is exactly a commit has
 test('a code span that is exactly one inferred token chips like its bare form', () => {
   const fork = gl(0xf126)
   const out = plain(
-    'see `b5a0d9f`, `src/auth.ts:42:21`, `NODE_ENV=prod`, `--dry-run`, `#123`, `feat/x`, `refactor/module`, `2024-01-15 14:02`, `1h30m30s`, `87%`, `v1.2.3`, `.env`',
+    'see `b5a0d9f`, `src/auth.ts:42:21`, `NODE_ENV=prod`, `#123`, `feat/x`, `refactor/module`, `2024-01-15 14:02`, `1h30m30s`, `87%`, `v1.2.3`, `.env`',
   )
   assert.ok(out.includes(`|${gl(0xf417)} b5a0d9f|`))
   assert.ok(out.includes(`|${gl(0xf15b)} src/auth.ts:42:21|`))
   assert.ok(out.includes('|NODE_ENV=prod|'))
-  assert.ok(out.includes('|--dry-run|'))
   assert.ok(out.includes('|#123|'))
   assert.ok(out.includes(`|${fork} feat/x|`))
   assert.ok(out.includes(`|${fork} refactor/module|`))
@@ -156,7 +155,7 @@ test('a code span that is exactly one inferred token chips like its bare form', 
   assert.ok(out.includes('|87%|'))
   assert.ok(out.includes('|v1.2.3|'))
   assert.ok(out.includes(`|${gl(0xf15b)} .env|`))
-  assert.equal(chips(out), 12)
+  assert.equal(chips(out), 11)
 })
 
 test('conventional branch prefixes chip with the fork icon', () => {

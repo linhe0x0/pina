@@ -5,7 +5,7 @@ A TUI experience package for Pi: the pina-dark theme plus UI extensions that res
 ## Language
 
 **Artifact**:
-A recognizable token in prose — file path, commit, date, duration, IP, flag — that can be chipped.
+A recognizable token in prose — file path, commit, date, duration, IP — that can be chipped.
 _Avoid_: token, entity
 
 **Chip**:

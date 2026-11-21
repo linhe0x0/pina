@@ -32,7 +32,6 @@ const ARTIFACT_SOURCES = [
   /\b\d+(?:\.\d+)?%/.source,
   /\b[A-Z][A-Z0-9_]+=[\w./:-]+/.source,
   `\\b(?:${MARKER_WORD_SOURCE})\\b`,
-  /(?<![\w-])--[\w][\w-]*\b/.source,
   `(?<![\\w./@-])(?:${BRANCH_PREFIX_SOURCE})\\/[\\w-]+(?:\\.[\\w-]+)*(?![\\w/-])`,
 ]
 
