@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import type { ExtensionContext, Theme } from '@earendil-works/pi-coding-agent'
 import { stripTerminalSequences } from '@earendil-works/pi-tui'
-import { installWidgetPanel } from '../src/widget-panel.ts'
+import { installWidgetPanel } from '../src/panel/widget-panel.ts'
 
 const BG = '\x1b[48;2;25;27;31m'
 const BAR = '\x1b[38;2;165;118;199m▌\x1b[39m'

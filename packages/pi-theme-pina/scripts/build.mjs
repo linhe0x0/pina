@@ -1,41 +1,16 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { loadTokens, packageRoot } from './tokens.mjs'
 
-const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-const core = JSON.parse(
-  await readFile(path.join(root, '../../tokens.json'), 'utf8'),
-)
+const vars = await loadTokens()
 
-const hexOf = (name, seen = new Set()) => {
-  if (seen.has(name)) throw new Error(`circular reference at "${name}"`)
-  seen.add(name)
-  const value = core.tokens?.[name]
-  if (value === undefined) throw new Error(`unknown token "${name}"`)
-  if (value.startsWith('#')) return value
-  if (value.startsWith('$')) return hexOf(value.slice(1), seen)
-  throw new Error(
-    `"${name}" must be a hex value or a $reference (got "${value}")`,
-  )
-}
-
-const camel = (kebab) =>
-  kebab
-    .split('-')
-    .map((part, i) => (i ? part[0].toUpperCase() + part.slice(1) : part))
-    .join('')
-
-const vars = Object.fromEntries(
-  Object.keys(core.tokens).map((name) => [camel(name), hexOf(name)]),
-)
-
-const themesDir = path.join(root, 'themes')
+const themesDir = path.join(packageRoot, 'themes')
 let failed = false
 
-const GENERATED = path.join(root, 'src/design-tokens.gen.ts')
+const GENERATED = path.join(packageRoot, 'src/theme/design-tokens.gen.ts')
 const generated = `export const DESIGN_TOKENS = {
-${Object.keys(core.tokens)
-  .map((name) => `  ${camel(name)}: '${hexOf(name)}',`)
+${Object.entries(vars)
+  .map(([name, hex]) => `  ${name}: '${hex}',`)
   .join('\n')}
 } as const
 `
@@ -43,17 +18,16 @@ try {
   let current = null
   try {
     current = await readFile(GENERATED, 'utf8')
-  } catch {
-  }
+  } catch {}
   if (current === generated) {
-    console.log('OK   src/design-tokens.gen.ts')
+    console.log('OK   src/theme/design-tokens.gen.ts')
   } else {
     await writeFile(GENERATED, generated)
-    console.log('SYNC src/design-tokens.gen.ts')
+    console.log('SYNC src/theme/design-tokens.gen.ts')
   }
 } catch (error) {
   failed = true
-  console.error(`FAIL src/design-tokens.gen.ts\n${error.message}`)
+  console.error(`FAIL src/theme/design-tokens.gen.ts\n${error.message}`)
 }
 
 for (const file of (await readdir(themesDir)).filter((f) =>

@@ -1,12 +1,20 @@
 import { existsSync } from 'node:fs'
-import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path'
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  relative,
+  resolve,
+  sep,
+} from 'node:path'
 import type {
   ExtensionContext,
   ReadonlyFooterDataProvider,
   Theme,
 } from '@earendil-works/pi-coding-agent'
 import { truncateToWidth, visibleWidth, type TUI } from '@earendil-works/pi-tui'
-import { PAD_X } from './editor.ts'
+import { createThemeSource } from '../theme/theme-source.ts'
+import { PAD_X } from '../panel/editor.ts'
 
 const PAD_LEFT = 1 + PAD_X
 
@@ -50,6 +58,7 @@ type SessionStats = {
 export class PinaFooter {
   private readonly footerData: ReadonlyFooterDataProvider
   private readonly getCtx: () => ExtensionContext
+  private readonly themeSource: () => Theme | undefined
   private readonly tui: TUI
   private readonly unsub: () => void
   private stats: SessionStats | undefined
@@ -63,6 +72,7 @@ export class PinaFooter {
     this.tui = tui
     this.getCtx = getCtx
     this.footerData = footerData
+    this.themeSource = createThemeSource(getCtx)
     this.unsub = footerData.onBranchChange(() => tui.requestRender())
   }
 
@@ -74,7 +84,7 @@ export class PinaFooter {
 
   render(width: number): string[] {
     const ctx = this.getCtx()
-    const theme = ctx.ui.theme
+    const theme = this.themeSource() as Theme
     const lines: string[] = []
 
     const inner = Math.max(0, width - PAD_LEFT)
@@ -88,7 +98,8 @@ export class PinaFooter {
       Math.max(1, inner - visibleWidth(stats) - visibleWidth(location)),
     )
     lines.push(
-      ' '.repeat(PAD_LEFT) + truncateToWidth(location + gap + stats, inner, '...'),
+      ' '.repeat(PAD_LEFT) +
+        truncateToWidth(location + gap + stats, inner, '...'),
     )
 
     const statuses = this.footerData.getExtensionStatuses()
@@ -99,7 +110,11 @@ export class PinaFooter {
         .join(' ')
       lines.push(
         ' '.repeat(PAD_LEFT) +
-          truncateToWidth(statusLine, Math.max(0, width - PAD_LEFT), theme.fg('dim', '...')),
+          truncateToWidth(
+            statusLine,
+            Math.max(0, width - PAD_LEFT),
+            theme.fg('dim', '...'),
+          ),
       )
     }
     lines.push('')

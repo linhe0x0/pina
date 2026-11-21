@@ -11,16 +11,16 @@ import {
   type TUI,
   type TuiMouseEvent,
 } from '@earendil-works/pi-tui'
+import { paintPanel } from './panel.ts'
+import { createThemeSource } from '../theme/theme-source.ts'
 
 const PAD_X = 1
 const PAD_Y = 0
-const BAR = '▌'
-const BAR_CAP = '▘'
-const HALF_BLOCK = '▀'
 const RESET_FG = '\x1b[39m'
 
 class PinaEditor extends CustomEditor {
   private getCtx: () => ExtensionContext
+  private readonly themeSource: () => Theme | undefined
 
   constructor(
     tui: TUI,
@@ -30,10 +30,11 @@ class PinaEditor extends CustomEditor {
   ) {
     super(tui, theme, keybindings, { paddingX: PAD_X })
     this.getCtx = getCtx
+    this.themeSource = createThemeSource(getCtx)
   }
 
   private get currentTheme(): Theme {
-    return this.getCtx().ui.theme
+    return this.themeSource() as Theme
   }
 
   setPaddingX(): void {}
@@ -92,32 +93,24 @@ class PinaEditor extends CustomEditor {
     if (width < 6) return super.render(width)
     const inner = width - 1
     const theme = this.currentTheme
-    const bg = theme.getBgAnsi('userMessageBg')
-    const panel = (line: string) =>
-      theme.bg('userMessageBg', line.replaceAll('\x1b[0m', `\x1b[0m${bg}`))
-    const blank = theme.bg('userMessageBg', ' '.repeat(inner))
-    const bar = this.isBashBorder()
-      ? theme.fg('bashMode', BAR)
-      : theme.fg('accent', BAR)
+    const barFg = this.isBashBorder()
+      ? theme.getFgAnsi('bashMode')
+      : theme.getFgAnsi('accent')
     const textFg = theme.getFgAnsi('userMessageText')
-
-    const out: string[] = []
-    for (let i = 0; i < PAD_Y; i++) out.push(bar + blank)
+    const lines: string[] = []
+    for (let i = 0; i < PAD_Y; i++) lines.push(' '.repeat(inner))
     for (const line of super.render(inner)) {
       const pad = ' '.repeat(Math.max(0, inner - visibleWidth(line)))
-      out.push(bar + panel(textFg + line + RESET_FG + pad))
+      lines.push(textFg + line + RESET_FG + pad)
     }
-    out.push(bar + panel(this.statusLine(inner)))
-    const cap = this.isBashBorder()
-      ? theme.fg('bashMode', BAR_CAP)
-      : theme.fg('accent', BAR_CAP)
-    out.push(
-      cap +
-        theme.style(HALF_BLOCK.repeat(inner), {
-          fg: theme.colors.userMessageBg,
-        }),
-    )
-    return out
+    lines.push(this.statusLine(inner))
+    return paintPanel(lines, width, {
+      barFg,
+      bg: theme.getBgAnsi('userMessageBg'),
+      edges: 'bottom',
+      fit: 'pad',
+      repaint: true,
+    })
   }
 
   handleMouse(event: TuiMouseEvent) {

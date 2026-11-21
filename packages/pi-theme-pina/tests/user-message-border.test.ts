@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { UserMessageComponent } from '@earendil-works/pi-coding-agent'
-import { installUserMessageBorder } from '../src/user-message-border.ts'
+import { installUserMessageBorder } from '../src/panel/user-message-border.ts'
 
 const OSC_PROMPT_START = '\x1b]133;A\x07'
 const OSC_PROMPT_END = '\x1b]133;B\x07\x1b]133;C\x07'
@@ -11,6 +11,7 @@ const WIDTH = 40
 
 const fakeTheme = {
   getBgAnsi: () => BG,
+  getFgAnsi: () => '\x1b[38;2;255;216;89m',
   fg: (_token: string, text: string) => `\x1b[38;2;255;216;89m${text}\x1b[39m`,
 }
 const BAR_STYLED = fakeTheme.fg('accent', BAR)
@@ -28,7 +29,7 @@ function renderWithBorder(): string[] {
 }
 
 test('OSC 133 markers stay ahead of the accent bar', () => {
-  installUserMessageBorder(() => ({ ui: { theme: fakeTheme } }) as never)
+  installUserMessageBorder(() => fakeTheme as never)
   const lines = renderWithBorder()
   assert.ok(lines.length >= 2, 'expected a multi-line render')
   assert.ok(

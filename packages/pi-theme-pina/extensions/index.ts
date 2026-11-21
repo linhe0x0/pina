@@ -2,23 +2,27 @@ import type {
   ExtensionAPI,
   ExtensionContext,
 } from '@earendil-works/pi-coding-agent'
-import { PinaEditor } from '../src/editor.ts'
-import { PinaFooter } from '../src/footer.ts'
-import { installDeferredCellSizeQuery } from '../src/ghostty-cell-size-query.ts'
-import { thinkingQuote } from '../src/thinking-quote.ts'
-import { installUserMessageBorder } from '../src/user-message-border.ts'
-import { createReplyEmphasis } from '../src/reply-emphasis.ts'
-import { installWidgetPanel } from '../src/widget-panel.ts'
+import { PinaEditor } from '../src/panel/editor.ts'
+import { PinaFooter } from '../src/footer/footer.ts'
+import { installDeferredCellSizeQuery } from '../src/compat/ghostty-cell-size-query.ts'
+import { thinkingQuote } from '../src/reply/thinking-quote.ts'
+import { installUserMessageBorder } from '../src/panel/user-message-border.ts'
+import { createReplyEmphasis } from '../src/reply/reply-emphasis.ts'
+import { createThemeSource } from '../src/theme/theme-source.ts'
+import { routeTransformers } from '../src/reply/transform-router.ts'
+import { installWidgetPanel } from '../src/panel/widget-panel.ts'
 
 export default function (pi: ExtensionAPI) {
   let ctx: ExtensionContext | undefined
-  installUserMessageBorder(() => ctx)
+  const themeSource = createThemeSource(() => ctx)
+  installUserMessageBorder(themeSource)
   installDeferredCellSizeQuery()
-  const replyEmphasis = createReplyEmphasis(() => ctx)
-  pi.registerMarkdownTransformer((markdown, context) =>
-    context.messageType === 'assistant-thinking'
-      ? thinkingQuote(markdown, context)
-      : replyEmphasis(markdown, context),
+  const replyEmphasis = createReplyEmphasis(themeSource)
+  pi.registerMarkdownTransformer(
+    routeTransformers({
+      'assistant-thinking': thinkingQuote,
+      assistant: replyEmphasis,
+    }),
   )
   pi.on('session_start', (_event, context) => {
     ctx = context

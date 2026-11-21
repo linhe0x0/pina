@@ -1,16 +1,15 @@
-import { readFileSync } from 'node:fs'
-import { createPalette, decorate } from '../src/reply-emphasis.ts'
+import { loadTheme } from './tokens.mjs'
+import { createPalette } from '../src/reply/palette.ts'
+import { decorate } from '../src/reply/reply-decorate.ts'
 
-const themeJson = JSON.parse(
-  readFileSync(new URL('../themes/pina-dark.json', import.meta.url), 'utf8'),
-)
-const hexOf = (token) => {
+const themeJson = await loadTheme('pina-dark')
+const rgbOf = (token) => {
   const hex = themeJson.vars[themeJson.colors[token]]
   if (!/^#[0-9a-f]{6}$/i.test(hex))
     throw new Error(`pina-dark has no hex color for ${token}`)
   return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
 }
-const sgr = (code, token) => `\x1b[${code};2;${hexOf(token).join(';')}m`
+const sgr = (code, token) => `\x1b[${code};2;${rgbOf(token).join(';')}m`
 const theme = {
   fg: (token, text) => sgr(38, token) + text + '\x1b[39m',
   getFgAnsi: (token) => sgr(38, token),
