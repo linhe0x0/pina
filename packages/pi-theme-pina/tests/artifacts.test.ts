@@ -44,6 +44,16 @@ test('compound durations chip as one span, never split', () => {
   assert.equal(chips(out), 2)
 })
 
+test('signed durations chip whole, with the sign inside the chip', () => {
+  const out = plain('offset +1s, drift -1s, took +1h30m and saved -1.5s')
+  assert.ok(out.includes('|+1s|'))
+  assert.ok(out.includes('|-1s|'))
+  assert.ok(out.includes('|+1h30m|'))
+  assert.ok(out.includes('|-1.5s|'))
+  assert.equal(chips(out), 4)
+  assert.equal(plain('x+1s and -x stay apart'), 'x+|1s| and -x stay apart')
+})
+
 test('a uuid chips once and no hash is carved out of it', () => {
   const out = plain('id 550e8400-e29b-41d4-a716-446655440000')
   assert.ok(out.includes('|550e8400-e29b-41d4-a716-446655440000|'))
@@ -80,8 +90,120 @@ test('bare file names chip whole, with line and column suffixes', () => {
 })
 
 test('non-whitelisted lookalikes stay untouched', () => {
-  const line = 'pi.dev e.g. No.1 Makefile x.test run.app y.io a.local'
+  const line = 'pi.dev e.g. No.1 documents x.test run.app y.io a.local'
   assert.equal(plain(line), line)
+})
+
+test('bare Makefile and Dockerfile names chip with the file icon', () => {
+  const out = plain('edit Makefile or makefile then Dockerfile')
+  assert.ok(out.includes(`|${gl(0xf15b)} Makefile|`))
+  assert.ok(out.includes(`|${gl(0xf15b)} makefile|`))
+  assert.ok(out.includes(`|${gl(0xf15b)} Dockerfile|`))
+  assert.equal(chips(out), 3)
+})
+
+test('bare Makefile name binds line and column suffixes', () => {
+  const out = plain('Makefile:12 and Makefile:42:7')
+  assert.ok(out.includes(`|${gl(0xf15b)} Makefile:12|`))
+  assert.ok(out.includes(`|${gl(0xf15b)} Makefile:42:7|`))
+  assert.equal(chips(out), 2)
+})
+
+test('new dotfile names chip; bare-name lookalikes stay untouched', () => {
+  const out = plain(
+    'tune .prettierignore .eslintignore .swiftformat keep .gitignore',
+  )
+  assert.ok(out.includes('|.prettierignore|'))
+  assert.ok(out.includes('|.eslintignore|'))
+  assert.ok(out.includes('|.swiftformat|'))
+  assert.ok(out.includes(`|${gl(0xf15b)} .gitignore|`))
+  assert.equal(chips(out), 4)
+  assert.equal(
+    plain('makefiles and GNUmakefile stay'),
+    'makefiles and GNUmakefile stay',
+  )
+})
+
+test('slash-joined bare names, dotfiles and directory forms stay untouched', () => {
+  const out = plain(
+    'readme/makefile/dockerfile pair .prettierrc/.eslintrc src/README docs/README src/Makefile config/.prettierrc Makefile/ Dockerfile/',
+  )
+  assert.equal(chips(out), 0)
+  assert.ok(out.includes('readme/makefile/dockerfile'))
+  assert.ok(out.includes('.prettierrc/.eslintrc'))
+})
+
+test('new bare filenames and uppercase fixed names chip with the file icon', () => {
+  const out = plain(
+    'update Jenkinsfile Vagrantfile Procfile Justfile Gemfile Rakefile Podfile Cartfile Brewfile CODEOWNERS LICENSE CONTRIBUTING CHANGELOG',
+  )
+  for (const token of [
+    'Jenkinsfile',
+    'Vagrantfile',
+    'Procfile',
+    'Justfile',
+    'Gemfile',
+    'Rakefile',
+    'Podfile',
+    'Cartfile',
+    'Brewfile',
+    'CODEOWNERS',
+    'LICENSE',
+    'CONTRIBUTING',
+    'CHANGELOG',
+  ]) {
+    assert.ok(out.includes(`|${gl(0xf15b)} ${token}|`), token)
+  }
+  assert.equal(chips(out), 13)
+})
+
+test('lowercase and mixed-case english-word file names stay untouched', () => {
+  const line =
+    'need a license, thanks for contributing, read the changelog, a License form'
+  assert.equal(plain(line), line)
+})
+
+test('new dotfile names chip, including compound and hyphenated forms', () => {
+  const tokens = [
+    '.gitattributes',
+    '.gitmodules',
+    '.gitkeep',
+    '.gitconfig',
+    '.node-version',
+    '.ruby-version',
+    '.python-version',
+    '.tool-versions',
+    '.babelrc',
+    '.browserslistrc',
+    '.stylelintrc',
+    '.npmignore',
+    '.yarnrc',
+    '.clang-format',
+  ]
+  const out = plain([...tokens, '.swiftlint.yml'].join(' '))
+  for (const token of tokens) {
+    assert.ok(out.includes(`|${token}|`), token)
+  }
+  assert.ok(out.includes(`|${gl(0xf15b)} .swiftlint.yml|`))
+  assert.equal(chips(out), tokens.length + 1)
+})
+
+test('new build-file extensions chip', () => {
+  const out = plain(
+    'go.mod go.sum main.tf vars.tfvars flake.nix BUILD.bazel app.xcconfig',
+  )
+  for (const token of [
+    'go.mod',
+    'go.sum',
+    'main.tf',
+    'vars.tfvars',
+    'flake.nix',
+    'BUILD.bazel',
+    'app.xcconfig',
+  ]) {
+    assert.ok(out.includes(`|${gl(0xf15b)} ${token}|`), token)
+  }
+  assert.equal(chips(out), 7)
 })
 
 test('markers, env assignments and branches chip', () => {
@@ -160,11 +282,13 @@ test('a code span that is exactly one inferred token chips like its bare form', 
 
 test('conventional branch prefixes chip with the fork icon', () => {
   const fork = gl(0xf126)
-  const out = plain('`perf/http` `revert/abc123` `ci/lint` chip')
+  const out = plain('`perf/http` `revert/abc123` `ci/lint` `build/api` chip')
   assert.ok(out.includes(`|${fork} perf/http|`))
   assert.ok(out.includes(`|${fork} revert/abc123|`))
   assert.ok(out.includes(`|${fork} ci/lint|`))
-  assert.equal(chips(out), 3)
+  assert.ok(out.includes(`|${fork} build/api|`))
+  assert.equal(chips(out), 4)
+  assert.equal(plain('feat/Auth-Flow and docs/README stay'), 'feat/Auth-Flow and docs/README stay')
 })
 
 test('file and branch tokens chip inside code spans with their icons', () => {

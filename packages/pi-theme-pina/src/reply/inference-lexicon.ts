@@ -75,6 +75,13 @@ export const FILE_EXTENSIONS: readonly string[] = [
   'patch',
   'diff',
   'readme',
+  'mod',
+  'sum',
+  'xcconfig',
+  'tf',
+  'tfvars',
+  'nix',
+  'bazel',
 ]
 
 export const DOTFILE_NAMES: readonly string[] = [
@@ -89,6 +96,24 @@ export const DOTFILE_NAMES: readonly string[] = [
   'bashrc',
   'zshrc',
   'profile',
+  'prettierignore',
+  'eslintignore',
+  'swiftformat',
+  'gitattributes',
+  'gitmodules',
+  'gitkeep',
+  'gitconfig',
+  'node-version',
+  'ruby-version',
+  'python-version',
+  'tool-versions',
+  'babelrc',
+  'browserslistrc',
+  'stylelintrc',
+  'npmignore',
+  'yarnrc',
+  'clang-format',
+  'swiftlint',
 ]
 
 export const BRANCH_PREFIXES: readonly string[] = [
@@ -104,6 +129,7 @@ export const BRANCH_PREFIXES: readonly string[] = [
   'perf',
   'revert',
   'ci',
+  'build',
 ]
 
 export const MARKER_WORDS: readonly string[] = ['TODO', 'FIXME', 'HACK']
@@ -125,4 +151,19 @@ export const FILE_EXTENSION_SOURCE = caseInsensitiveSource(FILE_EXTENSIONS)
 export const DOTFILE_NAME_SOURCE = longestFirst(DOTFILE_NAMES).join('|')
 export const BRANCH_PREFIX_SOURCE = longestFirst(BRANCH_PREFIXES).join('|')
 export const MARKER_WORD_SOURCE = MARKER_WORDS.join('|')
-export const README_NAME_SOURCE = caseInsensitiveSource(['readme'])
+export const BARE_FILENAME_SOURCE = caseInsensitiveSource([
+  'readme',
+  'makefile',
+  'dockerfile',
+  'jenkinsfile',
+  'vagrantfile',
+  'procfile',
+  'justfile',
+  'gemfile',
+  'rakefile',
+  'podfile',
+  'cartfile',
+  'brewfile',
+  'codeowners',
+])
+export const UPPER_FILENAME_SOURCE = ['CHANGELOG', 'CONTRIBUTING', 'LICENSE'].join('|')
